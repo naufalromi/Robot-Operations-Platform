@@ -34,7 +34,7 @@ export default function RobotDashboard() {
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Robot Fleet Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {robots.map(robot => (
           <div key={robot.id} className="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">

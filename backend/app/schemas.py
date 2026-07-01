@@ -3,9 +3,9 @@ from datetime import datetime
 
 
 class RobotBase(BaseModel):
-    name: str
+    name: str | None = None
     battery: int
-    status: str
+    status: str | None = None
     x: int
     y: int
     task: str | None = None

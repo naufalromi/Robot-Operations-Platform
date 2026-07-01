@@ -1,20 +1,32 @@
 import asyncio
-from sqlalchemy.orm import Session
-from .. import crud, database
+import os
+import json
+import paho.mqtt.client as mqtt
+from .. import crud, database, schemas
 from .simulator import RobotSimulator
+
+MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
+
+# MQTT Client Setup
+client = mqtt.Client()
+client.connect(MQTT_BROKER, 1883, 60)
+client.loop_start()
 
 async def run_simulator():
     simulator = RobotSimulator()
     while True:
-        # Use a new DB session for each iteration to avoid connection issues
+        # We only simulate; we don't update DB directly anymore
         db = database.SessionLocal()
         try:
             robots = crud.get_robots(db)
             for robot in robots:
-                # Only simulate 'active' or 'idle' robots, not 'broken' ones
                 if robot.status != "Broken":
                     update_data = simulator.simulate_step(robot)
-                    crud.update_robot(db, robot.id, update_data)
+                    
+                    # Publish telemetry via MQTT instead of DB update
+                    topic = f"fleet/robot/{robot.id}/telemetry"
+                    payload = update_data.model_dump_json()
+                    client.publish(topic, payload)
         finally:
             db.close()
         
