@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Literal
 
 
 class RobotBase(BaseModel):
@@ -29,3 +30,7 @@ class Robot(RobotBase):
     last_heartbeat: datetime
 
     model_config = {"from_attributes": True}
+
+
+class RobotCommand(BaseModel):
+    command: Literal['STOP', 'CHARGE', 'RESUME']
