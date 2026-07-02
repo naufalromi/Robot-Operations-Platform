@@ -37,7 +37,7 @@ async def run_simulator():
                 if robot.status != "Broken":
                     update_data = simulator.simulate_step(robot)
                     topic = f"fleet/robot/{robot.id}/telemetry"
-                    payload_dict = update_data.model_dump()
+                    payload_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
                     payload_dict["id"] = robot.id
                     payload = json.dumps(payload_dict)
                     client = get_client()

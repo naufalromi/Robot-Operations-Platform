@@ -31,18 +31,26 @@ def on_message(client, userdata, msg):
         db = database.SessionLocal()
         try:
             if topic_type == "telemetry":
-                robot_update = schemas.RobotUpdate(**payload)
+                robot_update = schemas.RobotUpdate(
+                    x=payload.get("x"),
+                    y=payload.get("y"),
+                    battery=payload.get("battery"),
+                    task=payload.get("task")
+                )
                 crud.update_robot(db, robot_id, robot_update)
             elif topic_type == "command":
                 command = schemas.RobotCommand(**payload).command
-                status = "Moving"
-                if command == "STOP":
-                    status = "Stopped"
-                elif command == "CHARGE":
-                    status = "Charging"
-                elif command == "RESUME":
+                if command == "DELETE":
+                    crud.delete_robot(db, robot_id)
+                else:
                     status = "Moving"
-                crud.update_robot(db, robot_id, schemas.RobotUpdate(status=status))
+                    if command == "STOP":
+                        status = "Stopped"
+                    elif command == "CHARGE":
+                        status = "Charging"
+                    elif command == "RESUME":
+                        status = "Moving"
+                    crud.update_robot(db, robot_id, schemas.RobotUpdate(status=status))
         finally:
             db.close()
     except Exception as e:

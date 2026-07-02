@@ -33,4 +33,4 @@ class Robot(RobotBase):
 
 
 class RobotCommand(BaseModel):
-    command: Literal['STOP', 'CHARGE', 'RESUME']
+    command: Literal['STOP', 'CHARGE', 'RESUME', 'DELETE']

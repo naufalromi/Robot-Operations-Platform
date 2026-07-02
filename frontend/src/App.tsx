@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import axios from 'axios'
-import { Bot, Battery, MapPin, AlertCircle, Plus, Square, Zap, Play } from 'lucide-react'
+import { Bot, Battery, MapPin, AlertCircle, Plus, Square, Zap, Play, Trash2 } from 'lucide-react'
 
 interface Robot {
   id: number
@@ -41,16 +41,24 @@ export default function RobotDashboard() {
         task: null
       })
       setNewRobotName('')
+      fetchRobots()
     } catch (error) {
       console.error("Error adding robot:", error)
     }
   }
 
-  const sendCommand = async (robotId: number, command: 'STOP' | 'CHARGE' | 'RESUME') => {
+  const sendCommand = async (robotId: number, command: 'STOP' | 'CHARGE' | 'RESUME' | 'DELETE') => {
     try {
-      await axios.put(`${API_URL}/robots/${robotId}`, {
-        status: command === 'STOP' ? 'Stopped' : command === 'CHARGE' ? 'Charging' : 'Moving'
-      })
+      if (command === 'DELETE') {
+        await axios.delete(`${API_URL}/robots/${robotId}`)
+        setRobots(prevRobots => prevRobots.filter(r => r.id !== robotId))
+      } else {
+        const newStatus = command === 'STOP' ? 'Stopped' : command === 'CHARGE' ? 'Charging' : 'Moving'
+        await axios.put(`${API_URL}/robots/${robotId}`, { status: newStatus })
+        setRobots(prevRobots => prevRobots.map(r =>
+          r.id === robotId ? { ...r, status: newStatus } : r
+        ))
+      }
     } catch (error) {
       console.error(`Error sending ${command} command:`, error)
     }
@@ -127,9 +135,10 @@ export default function RobotDashboard() {
               <p className="flex items-center"><AlertCircle className="mr-2 h-4 w-4" /> Task: {robot.task || 'None'}</p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => sendCommand(robot.id, 'STOP')} className="bg-red-500 text-white p-2 rounded"><Square size={16} /></button>
-              <button onClick={() => sendCommand(robot.id, 'CHARGE')} className="bg-purple-500 text-white p-2 rounded"><Zap size={16} /></button>
-              <button onClick={() => sendCommand(robot.id, 'RESUME')} className="bg-green-500 text-white p-2 rounded"><Play size={16} /></button>
+              <button onClick={() => sendCommand(robot.id, 'STOP')} className={`p-2 rounded ${robot.status === 'Stopped' ? 'bg-red-700' : 'bg-red-500'} text-white`}><Square size={16} /></button>
+              <button onClick={() => sendCommand(robot.id, 'CHARGE')} className={`p-2 rounded ${robot.status === 'Charging' ? 'bg-purple-700' : 'bg-purple-500'} text-white`}><Zap size={16} /></button>
+              <button onClick={() => sendCommand(robot.id, 'RESUME')} className={`p-2 rounded ${robot.status === 'Moving' ? 'bg-green-700' : 'bg-green-500'} text-white`}><Play size={16} /></button>
+              <button onClick={() => sendCommand(robot.id, 'DELETE')} className="bg-gray-500 text-white p-2 rounded ml-auto"><Trash2 size={16} /></button>
             </div>
           </div>
         ))}
