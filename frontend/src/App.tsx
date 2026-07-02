@@ -50,11 +50,11 @@ export default function RobotDashboard() {
   const sendCommand = async (robotId: number, command: 'STOP' | 'CHARGE' | 'RESUME' | 'DELETE') => {
     try {
       if (command === 'DELETE') {
-        await axios.delete(`${API_URL}/robots/${robotId}`)
+        await axios.post(`${API_URL}/robots/${robotId}/command`, { command: 'DELETE' })
         setRobots(prevRobots => prevRobots.filter(r => r.id !== robotId))
       } else {
+        await axios.post(`${API_URL}/robots/${robotId}/command`, { command })
         const newStatus = command === 'STOP' ? 'Stopped' : command === 'CHARGE' ? 'Charging' : 'Moving'
-        await axios.put(`${API_URL}/robots/${robotId}`, { status: newStatus })
         setRobots(prevRobots => prevRobots.map(r =>
           r.id === robotId ? { ...r, status: newStatus } : r
         ))
@@ -78,9 +78,14 @@ export default function RobotDashboard() {
 
       ws.current.onmessage = (event) => {
         const updatedRobot = JSON.parse(event.data)
-        setRobots(prevRobots => prevRobots.map(robot =>
-          robot.id === updatedRobot.id ? { ...robot, ...updatedRobot } : robot
-        ))
+        setRobots(prevRobots => {
+          const exists = prevRobots.find(r => r.id === updatedRobot.id)
+          if (exists) {
+            return prevRobots.map(r => r.id === updatedRobot.id ? { ...r, ...updatedRobot } : r)
+          } else {
+            return [...prevRobots, updatedRobot]
+          }
+        })
       }
 
       ws.current.onerror = (error) => {

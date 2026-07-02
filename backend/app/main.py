@@ -77,12 +77,19 @@ def _on_mqtt_message(client, userdata, msg):
         asyncio.run_coroutine_threadsafe(manager.broadcast(payload), _loop)
 
 
+ENABLE_PYTHON_SIM = os.getenv("ENABLE_PYTHON_SIM", "true").lower() == "true"
+
+
 @app.on_event("startup")
 async def startup_event():
     global _loop
     _loop = asyncio.get_running_loop()
     get_mqtt_client()
-    asyncio.create_task(run_simulator())
+    if ENABLE_PYTHON_SIM:
+        asyncio.create_task(run_simulator())
+        print("Python simulator started (ENABLE_PYTHON_SIM=true)")
+    else:
+        print("Python simulator disabled (ENABLE_PYTHON_SIM=false) - using ROS2")
 
 
 @app.websocket("/ws")
@@ -140,3 +147,28 @@ def delete_robot(robot_id: int, db: Session = Depends(get_db)):
     if not deleted:
         raise HTTPException(status_code=404, detail="Robot not found")
     return deleted
+
+
+@app.post("/robots/{robot_id}/command")
+def send_robot_command(robot_id: int, command: schemas.RobotCommand, db: Session = Depends(get_db)):
+    robot = crud.get_robot(db, robot_id)
+    if not robot:
+        raise HTTPException(status_code=404, detail="Robot not found")
+
+    client = get_mqtt_client()
+    if not client:
+        raise HTTPException(status_code=503, detail="MQTT broker not available")
+
+    topic = f"fleet/robot/{robot_id}/command"
+    payload = json.dumps({"command": command.command})
+    client.publish(topic, payload, qos=1)
+
+    if command.command == "DELETE":
+        crud.delete_robot(db, robot_id)
+    else:
+        status_map = {"STOP": "Stopped", "CHARGE": "Charging", "RESUME": "Moving"}
+        new_status = status_map.get(command.command)
+        if new_status:
+            crud.update_robot(db, robot_id, schemas.RobotUpdate(status=new_status))
+
+    return {"sent": command.command, "topic": topic}

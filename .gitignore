@@ -24,5 +24,13 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-project.md
-.gitignore
+# ROS2 build artifacts
+ros_bridge/install/
+ros_bridge/log/
+ros_bridge/build/
+
+# Docker
+postgres_data/
+
+# Logs
+*.log

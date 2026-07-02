@@ -5,10 +5,10 @@ from typing import Literal
 
 class RobotBase(BaseModel):
     name: str | None = None
-    battery: int
+    battery: float
     status: str | None = None
-    x: int
-    y: int
+    x: float
+    y: float
     task: str | None = None
 
 
@@ -18,10 +18,10 @@ class RobotCreate(RobotBase):
 
 class RobotUpdate(BaseModel):
     name: str | None = None
-    battery: int | None = None
+    battery: float | None = None
     status: str | None = None
-    x: int | None = None
-    y: int | None = None
+    x: float | None = None
+    y: float | None = None
     task: str | None = None
 
 
